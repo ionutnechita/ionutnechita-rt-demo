@@ -1,0 +1,157 @@
+package(default_visibility = ["//visibility:public"])
+
+# Main RT demo binary
+cc_binary(
+    name = "rt_demo",
+    srcs = ["rt_demo.c"],
+    copts = [
+        "-Wall",
+        "-Wextra", 
+        "-O2",
+        "-std=gnu99",
+        "-D_GNU_SOURCE",
+        "-D_POSIX_C_SOURCE=200809L",
+    ],
+    linkopts = [
+        "-lpthread",
+        "-lrt",
+    ],
+    # Force use of system gcc instead of ccache
+    exec_properties = {
+        "use-default-shell-env": "1",
+    },
+)
+
+# Debug version with additional debugging info
+cc_binary(
+    name = "rt_demo_debug",
+    srcs = ["rt_demo.c"],
+    copts = [
+        "-Wall",
+        "-Wextra",
+        "-g",
+        "-O0",
+        "-std=gnu99", 
+        "-D_GNU_SOURCE",
+        "-D_POSIX_C_SOURCE=200809L",
+        "-DDEBUG",
+    ],
+    linkopts = [
+        "-lpthread",
+        "-lrt",
+    ],
+)
+
+# Optimized release version
+cc_binary(
+    name = "rt_demo_release",
+    srcs = ["rt_demo.c"],
+    copts = [
+        "-Wall",
+        "-Wextra",
+        "-O3",
+        "-march=native",
+        "-DNDEBUG",
+        "-std=gnu99",
+        "-D_GNU_SOURCE", 
+        "-D_POSIX_C_SOURCE=200809L",
+    ],
+    linkopts = [
+        "-lpthread",
+        "-lrt",
+        "-s",  # Strip symbols
+    ],
+)
+
+# Performance profiling version
+cc_binary(
+    name = "rt_demo_profile",
+    srcs = ["rt_demo.c"],
+    copts = [
+        "-Wall",
+        "-Wextra",
+        "-O2",
+        "-pg",  # Enable gprof profiling
+        "-g",
+        "-std=gnu99",
+        "-D_GNU_SOURCE",
+        "-D_POSIX_C_SOURCE=200809L",
+    ],
+    linkopts = [
+        "-lpthread",
+        "-lrt",
+        "-pg",
+    ],
+)
+
+# Address sanitizer version for debugging
+cc_binary(
+    name = "rt_demo_asan",
+    srcs = ["rt_demo.c"],
+    copts = [
+        "-Wall",
+        "-Wextra",
+        "-O1",
+        "-g",
+        "-fsanitize=address",
+        "-fno-omit-frame-pointer",
+        "-std=gnu99",
+        "-D_GNU_SOURCE",
+        "-D_POSIX_C_SOURCE=200809L",
+    ],
+    linkopts = [
+        "-lpthread",
+        "-lrt",
+        "-fsanitize=address",
+    ],
+)
+
+# Thread sanitizer version
+cc_binary(
+    name = "rt_demo_tsan",
+    srcs = ["rt_demo.c"],
+    copts = [
+        "-Wall",
+        "-Wextra",
+        "-O1",
+        "-g",
+        "-fsanitize=thread",
+        "-std=gnu99",
+        "-D_GNU_SOURCE",
+        "-D_POSIX_C_SOURCE=200809L",
+    ],
+    linkopts = [
+        "-lpthread",
+        "-lrt",
+        "-fsanitize=thread",
+    ],
+)
+
+# Test that requires root privileges (marked as manual)
+sh_test(
+    name = "rt_demo_test",
+    srcs = ["test_rt_demo.sh"],
+    data = [":rt_demo"],
+    size = "medium",
+    tags = [
+        "manual",  # Don't run automatically - requires root
+        "requires-root",
+        "local",   # Must run locally, not in remote execution
+    ],
+)
+
+# Basic test that can run without root (limited functionality)
+sh_test(
+    name = "rt_demo_basic_test",
+    srcs = ["test_basic.sh"],
+    data = [":rt_demo"],
+    size = "small",
+)
+
+# Documentation generation (simplified)
+genrule(
+    name = "docs",
+    srcs = ["rt_demo.c"],
+    outs = ["rt_demo_docs.html"],
+    cmd = "echo '<html><body><h1>RT Demo</h1><pre>' > $@ && cat $< >> $@ && echo '</pre></body></html>' >> $@",
+)

@@ -1,0 +1,107 @@
+# Bazel configuration for RT Demo project
+
+# Use either WORKSPACE or Bzlmod (try both options)
+# Option 1: Enable WORKSPACE for backward compatibility
+common --enable_workspace
+
+# Option 2: Use Bzlmod (modern approach)
+# common --enable_bzlmod
+
+# Disable ccache for Bazel builds (causes sandbox issues)
+build --action_env=PATH=/usr/local/bin:/usr/bin:/bin
+
+# Common flags for all builds
+common --enable_platform_specific_config
+
+# C++ standard and optimization
+build --cxxopt=-std=c++17
+build --host_cxxopt=-std=c++17
+
+# Platform-specific configurations
+build:linux --cxxopt=-std=gnu++17
+build:linux --linkopt=-ldl
+
+# Debug configuration
+build:debug --compilation_mode=dbg
+build:debug --copt=-g3
+build:debug --copt=-O0
+build:debug --copt=-DDEBUG
+build:debug --strip=never
+
+# Release configuration  
+build:release --compilation_mode=opt
+build:release --copt=-O3
+build:release --copt=-DNDEBUG
+build:release --copt=-march=native
+build:release --linkopt=-s
+build:release --strip=always
+
+# Real-time optimized configuration
+build:rt --compilation_mode=opt
+build:rt --copt=-O2
+build:rt --copt=-march=native
+build:rt --copt=-mtune=native
+build:rt --copt=-fno-omit-frame-pointer
+build:rt --copt=-pipe
+build:rt --linkopt=-Wl,--as-needed
+
+# Address Sanitizer
+build:asan --copt=-fsanitize=address
+build:asan --copt=-fno-omit-frame-pointer
+build:asan --linkopt=-fsanitize=address
+build:asan --compilation_mode=dbg
+
+# Thread Sanitizer
+build:tsan --copt=-fsanitize=thread
+build:tsan --linkopt=-fsanitize=thread
+build:tsan --compilation_mode=dbg
+
+# Memory Sanitizer
+build:msan --copt=-fsanitize=memory
+build:msan --copt=-fno-omit-frame-pointer
+build:msan --linkopt=-fsanitize=memory
+build:msan --compilation_mode=dbg
+
+# UBSan (Undefined Behavior Sanitizer)
+build:ubsan --copt=-fsanitize=undefined
+build:ubsan --linkopt=-fsanitize=undefined
+build:ubsan --compilation_mode=dbg
+
+# Coverage configuration
+build:coverage --collect_code_coverage
+build:coverage --instrumentation_filter=//...
+build:coverage --combined_report=lcov
+
+# Test configuration
+test --test_output=errors
+test --test_summary=detailed
+test --test_verbose_timeout_warnings
+
+# Performance testing
+test:perf --test_arg=--benchmark_format=json
+test:perf --test_timeout=300
+
+# Static analysis
+build:static-analysis --aspects=@rules_cc//cc:find_cc_toolchain.bzl%find_cpp_toolchain
+build:static-analysis --output_groups=compilation_outputs
+
+# Remote caching (uncomment and configure if using remote cache)
+# build --remote_cache=grpc://localhost:9092
+# build --remote_timeout=60
+
+# Local resources (updated syntax for Bazel 8.x)
+build --local_resources=memory=HOST_RAM*0.75
+build --local_resources=cpu=HOST_CPUS*0.75
+
+# Verbose failures
+build --verbose_failures
+build --sandbox_debug
+
+# Color output
+common --color=yes
+
+# Show test errors
+test --test_output=errors
+
+# Platform mappings
+build --incompatible_enable_cc_toolchain_resolution
